@@ -39,32 +39,19 @@
      {
         $response_from_api = $this->httpApiRequest();
         $db_instanse = new db();
-        $filtered = $this->filterUsers($response_from_api);
-       
-       
-        $emails = array_count_values(array_map(function($item){
-                                    return $item->email;
-                            },$filtered));
-        
-        
-        $duplacted=[];                    
 
-        foreach($filtered as $key=> $item){
+        $filtered = $this->filterbyAgeUsers($response_from_api);         
+        $dupl_result = filterDuplacate($filtered);
 
-               if($emails[$item->email] == 1 ){
-                    $db_instanse->insert(array_values((array)$item));
-               } 
-               else{
-                   array_push($duplacted ,$item);
-               }
-        }
-          
-       
+        $for_save =  $dupl_result[0];
+        $duplacated =  $dupl_result[1];
+
+        
      }
 
 
 
-     private function filterUsers($response){
+     private function filterbyAgeUsers($response){
         
         $users =  $this->getUser($response);
      
@@ -75,10 +62,29 @@
         $after21fromJerusalem =  array_filter($users, function($user){
                                         return $this->convertDateToAge($user->birth_date) >21 && $user->city_id == 5;
                                  }); 
-                              
-        return   array_unique(array_merge($after18 ,$after21fromJerusalem),SORT_REGULAR)  ;                       
+        $filter_pass  = array_unique(array_merge($after18 ,$after21fromJerusalem),SORT_REGULAR) ;
+     
+
+     
+        return     ;                       
      }
-   
+     
+     private function filterDuplacate($filtered){
+
+        $email_dupl = [];
+        $users_dup =[];
+               
+        foreach ($filtered as $index=>$f) {
+           if (isset($email_dupl[$f->email])) {
+                array_push($users_dup, $filtered[$index]);
+                unset($filtered[$index]);
+              continue;
+            }
+            $email_dupl[$f->email] = true;
+        }        
+       return  [ $filtered , $users_dup ];
+     }
+
      private function getUser($response){
         $obj_users = json_decode($response);
         return $obj_users->users; 
