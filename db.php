@@ -4,7 +4,7 @@ class db{
 public $conn;    
 public function getDbCon() {
         try {
-            $con = new PDO("mysql:host=127.0.0.1;port=3306;dbname=become;charset=utf8", "root", "root");
+            $con = new PDO("mysql:host=127.0.0.1;port=3306;dbname=become;charset=utf8", "root", "");
             $con->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
             $con->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             return $con;
@@ -25,7 +25,7 @@ public function select(){
 }
 
 public function insert($data){
-     print_r($data) ; echo '<br>' ;
+    //  print_r($data) ; echo '<br>' ;
     $this->conn = $this->getDbCon();    
     $sql = "INSERT INTO users (first_name, last_name, email, birth_date, phone, city_id) VALUES (?,?,?,?,?,?)";
     $result=  $this->conn->prepare($sql)->execute($data);
@@ -35,13 +35,33 @@ public function insert($data){
 }    
 
 public function update($data){
-
+    print_r($data); echo '<br>';
     $this->conn = $this->getDbCon();
     $sql = "UPDATE users SET first_name=:first_name, last_name=:last_name, email=:email, birth_date=:birth_date, phone=:phone, city_id=:city_id WHERE id=:id";
     $result = $this->conn->prepare($sql)->execute($data);
     $this->conn = null;
     return $result;
  
+}
+public function insertOrUpdate($alls){
+       
+       $alls_origin = $this->select();
+      
+       if(count($alls_origin) == 0){     
+        array_walk($alls,function($item){
+                 $data = array_values((array)$item);   
+                 $this->insert($data);
+        });
+       }
+       else{   
+        array_walk($alls,function($item){
+                $item->id=22;
+                $data = array_values((array)$item);           
+                $this->update($data);
+        });
+    }
+
+         
 }
 
 public function delete($id){

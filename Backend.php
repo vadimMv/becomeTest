@@ -35,22 +35,21 @@
      }
 
 
-     public function processData()
-     {
+    public function processData(){
         $response_from_api = $this->httpApiRequest();
         $db_instanse = new db();
 
         $filtered = $this->filterbyAgeUsers($response_from_api);         
-        $dupl_result = filterDuplacate($filtered);
+        $dupl_result =$this->filterDuplacate($filtered);
 
         $for_save =  $dupl_result[0];
         $duplacated =  $dupl_result[1];
 
-        
-     }
+        $db_instanse->insertOrUpdate($for_save);
 
-
-
+   }
+      
+   
      private function filterbyAgeUsers($response){
         
         $users =  $this->getUser($response);
@@ -64,9 +63,11 @@
                                  }); 
         $filter_pass  = array_unique(array_merge($after18 ,$after21fromJerusalem),SORT_REGULAR) ;
      
-
-     
-        return     ;                       
+         // bad users 
+        //  foreach($users as $i =>  $user){                
+        //  }
+                                 
+        return    $filter_pass  ;                       
      }
      
      private function filterDuplacate($filtered){
