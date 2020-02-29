@@ -41,24 +41,35 @@
 
         $filtered = $this->filterbyAgeUsers($response_from_api);         
         $dupl_result =$this->filterDuplacate($filtered);
-
         $for_save =  $dupl_result[0];
         $duplacated =  $dupl_result[1];
-
         $db_instanse->insertOrUpdate($for_save);
 
    }
       
-   
+    public function AjaxResponse(){
+        $db_instanse = new db();
+        $response = $db_instanse->select();
+        header('Content-Type: application/json');
+        echo json_encode($response);
+    }
+    public function AjaxResponse2(){
+        $db_instanse = new db();
+        $response = $db_instanse->selectStat();
+        header('Content-Type: application/json');
+        echo json_encode($response);
+    }
      private function filterbyAgeUsers($response){
         
         $users =  $this->getUser($response);
      
         $after18 = array_filter($users, function($user){
+                        $user->age = $this->convertDateToAge($user->birth_date);
                         return $this->convertDateToAge($user->birth_date) >18;
                 }); 
        
         $after21fromJerusalem =  array_filter($users, function($user){
+                                        $user->age = $this->convertDateToAge($user->birth_date);
                                         return $this->convertDateToAge($user->birth_date) >21 && $user->city_id == 5;
                                  }); 
         $filter_pass  = array_unique(array_merge($after18 ,$after21fromJerusalem),SORT_REGULAR) ;
