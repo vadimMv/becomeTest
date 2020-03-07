@@ -40,45 +40,56 @@
         $db_instanse = new db();
 
         $filtered = $this->filterbyAgeUsers($response_from_api);         
-        $dupl_result =$this->filterDuplacate($filtered);
+        $dupl_result = $this->filterDuplacate($filtered[0]);
+     
         $for_save =  $dupl_result[0];
         $duplacated =  $dupl_result[1];
-        $db_instanse->insertOrUpdate($for_save);
-
+        $rejected = $filtered[1];
+        $report =  $db_instanse->insertOrUpdate($for_save);
+        
+        return [ "<h2>End process log ..)))</h2><br>" , 
+                 "<h2>Rejected users =>".count($rejected)."</h2><br>",
+                 "<h2>Duplicated users =>".count($duplacated)."</h2><br>",
+                 "<h2>". $report ."</h2><br>" ] ;
    }
       
-    public function AjaxResponse(){
-        $db_instanse = new db();
-        $response = $db_instanse->select();
+    public function AjaxResponse($param){
+
         header('Content-Type: application/json');
+
+        $db_instanse = new db();
+        $response = [];
+
+        if($param =='graphs'){
+            $response = $db_instanse->selectStat();
+        }
+        else if($param == 'table'){
+            $response = $db_instanse->select();
+        }
         echo json_encode($response);
     }
-    public function AjaxResponse2(){
-        $db_instanse = new db();
-        $response = $db_instanse->selectStat();
-        header('Content-Type: application/json');
-        echo json_encode($response);
-    }
+
      private function filterbyAgeUsers($response){
         
         $users =  $this->getUser($response);
-     
-        $after18 = array_filter($users, function($user){
-                        $user->age = $this->convertDateToAge($user->birth_date);
-                        return $this->convertDateToAge($user->birth_date) >18;
-                }); 
-       
-        $after21fromJerusalem =  array_filter($users, function($user){
-                                        $user->age = $this->convertDateToAge($user->birth_date);
-                                        return $this->convertDateToAge($user->birth_date) >21 && $user->city_id == 5;
-                                 }); 
-        $filter_pass  = array_unique(array_merge($after18 ,$after21fromJerusalem),SORT_REGULAR) ;
-     
-         // bad users 
-        //  foreach($users as $i =>  $user){                
-        //  }
-                                 
-        return    $filter_pass  ;                       
+        $after18 = [] ; $after21fromJerusalem = [] ; $rejected=[];
+        array_walk($users, function($user) use (&$after18 , &$after21fromJerusalem, &$rejected){
+                    
+                    $user->age = $this->convertDateToAge($user->birth_date);
+
+                    if($this->convertDateToAge($user->birth_date) >18){
+                        array_push($after18,$user);
+                    }
+                    else if($this->convertDateToAge($user->birth_date) >21 && $user->city_id == 5){
+                        array_push($after21fromJerusalem,$user);
+                    }
+                    else{
+                        array_push($rejected,$user);
+                    }
+        });
+          
+        $filter_pass  = array_unique(array_merge($after18 ,$after21fromJerusalem),SORT_REGULAR) ;                 
+        return   [ $filter_pass , $rejected ] ;                       
      }
      
      private function filterDuplacate($filtered){

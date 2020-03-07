@@ -1,7 +1,8 @@
 <?php
 class db{
 
-public $conn;    
+public $conn;   
+
 public function getDbCon() {
         try {
             $con = new PDO("mysql:host=127.0.0.1;port=3306;dbname=become;charset=utf8", "root", "");
@@ -25,11 +26,16 @@ public function select(){
 }
 
 public function selectStat(){
-    $this->conn = $this->getDbCon();
+    $this->conn = $this->getDbCon(); 
+    $query = "SELECT  COUNT(CASE WHEN age  <= 20 THEN 1 END) ,
+                      COUNT(CASE WHEN (age >=20 AND age <=40) THEN 1 END),
+                      COUNT(CASE WHEN (age >=40 AND age <=70) THEN 1 END),
+                      COUNT(CASE WHEN (age >=70 AND age <=90) THEN 1 END)
+                      FROM `users` ";
     $city = $this->conn->query("SELECT  count(city_id) FROM `users` GROUP BY city_id")->fetchAll();
-    // $age =  $this->conn->query("SELECT city_id as CITY ,count(city_id) FROM `users` GROUP BY city_id")->fetchAll();
+    $age =  $this->conn->query($query)->fetch();
     $this->conn = null;
-    return $city;
+    return  [$city , $age];
 }
 private function rowsCount(){
     
@@ -65,8 +71,9 @@ public function update($data){
  
 }
 public function insertOrUpdate($alls){
-     
-       if($this->rowsCount() == 0){     
+       $rows = count($alls);
+       $db_rows = $this->rowsCount();
+       if($db_rows == 0){     
         array_walk($alls,function($item){
                  $data = array_values((array)$item);   
                  $this->insert($data);
@@ -81,7 +88,7 @@ public function insertOrUpdate($alls){
         });
     }
 
-         
+    return  $db_rows == 0 ? "insert new users=>" .$rows  : "updated new users=>" .$rows;  
 }
 
 public function delete($id){
